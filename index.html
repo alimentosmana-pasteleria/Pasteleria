@@ -233,9 +233,9 @@ const CONFIG = {
   correo:          "chachgabriel624@gmail.com",
   whatsappNumero:  "50500000000",
   moneda:          "C$",
-  emailjsServiceId:  "TU_SERVICE_ID",
+  emailjsServiceId:  "service_o5hr0t7",
   emailjsTemplateId: "TU_TEMPLATE_ID",
-  emailjsPublicKey:  "TU_PUBLIC_KEY",
+  emailjsPublicKey:  "TL5B7Et2lUkc6X96a",
 };
 const PRECIOS = {
   ambiente:   { p:300, m:450, g:600, xg:800  },
@@ -379,6 +379,11 @@ const PRECIOS = {
     </div>
     <div class="resumen-grid" id="resumen-grid"></div>
     <div class="sep"></div>
+    <div class="btn-group">
+      <button class="btn btn-next" style="width:100%;background:linear-gradient(135deg,#e11d48,#be123c);box-shadow:0 5px 20px rgba(225,29,72,.45);" id="btn-concretar" onclick="concretarPedido()">🎁 Concretar Pedido (Enviar Copia Automática)</button>
+    </div>
+    <div class="sep"></div>
+    <p class="subtitle" align="center" style="font-size:0.8rem; margin-bottom: 10px;">Opciones secundarias (Segunda capa de seguridad)</p>
     <div class="btn-group">
       <button class="btn btn-pdf" onclick="generarPDF()">📄 Descargar PDF</button>
       <button class="btn btn-correo" onclick="enviarCorreo()">📧 Enviar por correo</button>
