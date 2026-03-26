@@ -1485,7 +1485,16 @@
         (P.personalizacion === "custom" && d.descCustom ? `Descripción: ${d.descCustom}\n` : "") +
         (P.personalizacion === "criterio" && d.notaCrit ? `Nota: ${d.notaCrit}\n` : "");
 
-      const folioPedido = "MN-" + Date.now().toString().slice(-6);
+      let pdfAdjunto = null;
+      try {
+        pdfAdjunto = construirPDFPedido();
+      } catch (pdfErr) {
+        console.error("PDF build error:", pdfErr);
+        toast("❌ No se pudo generar el PDF del pedido.");
+        return false;
+      }
+
+      const folioPedido = pdfAdjunto.folio || ("MN-" + Date.now().toString().slice(-6));
       const asunto = `Nuevo pedido ${folioPedido} - ${d.nombre}`;
       const mensaje =
         `Cliente: ${d.nombre}\n` +
@@ -1496,44 +1505,33 @@
         `Total estimado: ${CONFIG.moneda} ${calcPrecio().toLocaleString("es-NI")}\n\n` +
         `Detalle:\n${detalle}`;
 
-      const templateParams = {
-        to_email:        CONFIG.correo,
-        from_name:       d.nombre,
-        name:            d.nombre,
-        title:           asunto,
-        message:         mensaje,
-        reply_to:        d.correo || CONFIG.correo,
-        from_email:      d.correo || CONFIG.correo,
-        sitio_origen:    window.location.origin,
-        nombre_cliente:  d.nombre,
-        telefono:        d.tel,
-        correo_cliente:  d.correo || "(no proporcionado)",
-        fecha_entrega:   ff + (d.hora ? " a las " + d.hora : ""),
-        direccion:       d.direccion || "—",
-        detalle_pedido:  detalle,
-        total_estimado:  CONFIG.moneda + " " + calcPrecio().toLocaleString("es-NI"),
-        folio:           folioPedido,
+      const payload = {
+        toEmail: CONFIG.correo,
+        replyTo: d.correo || CONFIG.correo,
+        subject: asunto,
+        text: mensaje,
+        pdfFilename: pdfAdjunto.filename,
+        pdfBase64: pdfAdjunto.pdfBase64,
+        serviceId: emailjsServiceId,
+        templateId: emailjsTemplateId,
+        publicKey: emailjsPublicKey,
       };
 
       toast("📤 Enviando correo…");
       try {
-        if (!window.emailjs) throw new Error("EmailJS no cargó. Revisa el script CDN o bloqueo del navegador.");
-        emailjs.init(emailjsPublicKey);
-        const resp = await emailjs.send(emailjsServiceId, emailjsTemplateId, templateParams);
-        console.log("EmailJS ok:", resp);
-        toast("✅ ¡Correo enviado exitosamente! ID: " + templateParams.folio);
+        const resp = await fetch("/.netlify/functions/send-order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await resp.json().catch(() => ({}));
+        if (!resp.ok) throw new Error(data.error || ("HTTP " + resp.status));
+        toast("✅ ¡Pedido enviado con PDF adjunto! ID: " + folioPedido);
         return true;
       } catch (err) {
-        console.error("EmailJS error:", err);
+        console.error("Send order error:", err);
         const detalleError = err?.text || err?.message || "Error desconocido";
-        const errTxt = String(detalleError).toLowerCase();
-        if (errTxt.includes("public key") || errTxt.includes("invalid public key")) {
-          toast("❌ Public Key invalida en EmailJS. Copia la Public Key correcta del Dashboard.");
-        } else if (errTxt.includes("origin")) {
-          toast("❌ Dominio no permitido en EmailJS. Agrega este dominio: " + window.location.origin);
-        } else {
-          toast("❌ No se pudo enviar el correo: " + detalleError);
-        }
+        toast("❌ No se pudo enviar el pedido: " + detalleError);
         return false;
       }
     }
