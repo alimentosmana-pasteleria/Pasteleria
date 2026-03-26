@@ -953,7 +953,7 @@
     const CONFIG = {
       empresa: "Maná Alimentos",
       slogan: "Endulzamos tus momentos especiales",
-      tel: "+505 0000-0000",
+      tel: "+505 4550-4231",
       correo: "contacto.alimentosmana@gmail.com",
       whatsappNumero: "+50245504231",
       moneda: "Q",
@@ -1518,7 +1518,8 @@
       toast("📤 Enviando correo…");
       try {
         if (!window.emailjs) throw new Error("EmailJS no cargó. Revisa el script CDN o bloqueo del navegador.");
-        const resp = await emailjs.send(emailjsServiceId, emailjsTemplateId, templateParams, { publicKey: emailjsPublicKey });
+        emailjs.init(emailjsPublicKey);
+        const resp = await emailjs.send(emailjsServiceId, emailjsTemplateId, templateParams);
         console.log("EmailJS ok:", resp);
         toast("✅ ¡Correo enviado exitosamente! ID: " + templateParams.folio);
         return true;
