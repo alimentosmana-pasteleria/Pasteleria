@@ -1217,9 +1217,9 @@
     const P = { tamano: null, tipo: null, capas: null, sabores: [], personalizacion: null, fotoBase64: null };
 
     // ── EmailJS ──
-    const emailjsServiceId  = "service_o5hr0t7";
-    const emailjsTemplateId = "template_oqfm2bj";
-    const emailjsPublicKey  = "TL5B7Et2lUkc6X96a";
+    const emailjsServiceId = CONFIG.emailjsServiceId;
+    const emailjsTemplateId = CONFIG.emailjsTemplateId;
+    const emailjsPublicKey = CONFIG.emailjsPublicKey;
 
     // ── Init ──
     document.getElementById("hdr-slogan").textContent = CONFIG.slogan;
@@ -1459,6 +1459,10 @@
     async function enviarCorreo() {
       const d = obtenerDatos();
       if (!d.nombre || !d.tel) { toast("⚠️ Completa nombre y teléfono antes de enviar"); return; }
+      if (d.correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.correo)) {
+        toast("⚠️ El correo del cliente no es valido.");
+        return;
+      }
 
       const ff = d.fecha
         ? new Date(d.fecha + "T12:00").toLocaleDateString("es-NI", { weekday: "long", year: "numeric", month: "long", day: "numeric" })
@@ -1475,6 +1479,11 @@
         (P.personalizacion === "criterio" && d.notaCrit ? `Nota: ${d.notaCrit}\n` : "");
 
       const templateParams = {
+        to_email:        CONFIG.correo,
+        from_name:       d.nombre,
+        reply_to:        d.correo || CONFIG.correo,
+        from_email:      d.correo || CONFIG.correo,
+        sitio_origen:    window.location.origin,
         nombre_cliente:  d.nombre,
         telefono:        d.tel,
         correo_cliente:  d.correo || "(no proporcionado)",
@@ -1487,12 +1496,18 @@
 
       toast("📤 Enviando correo…");
       try {
-        emailjs.init(emailjsPublicKey);
-        await emailjs.send(emailjsServiceId, emailjsTemplateId, templateParams);
-        toast("✅ ¡Correo enviado exitosamente!");
+        if (!window.emailjs) throw new Error("EmailJS no cargó. Revisa el script CDN o bloqueo del navegador.");
+        const resp = await emailjs.send(emailjsServiceId, emailjsTemplateId, templateParams, { publicKey: emailjsPublicKey });
+        console.log("EmailJS ok:", resp);
+        toast("✅ ¡Correo enviado exitosamente! ID: " + templateParams.folio);
       } catch (err) {
         console.error("EmailJS error:", err);
-        toast("❌ No se pudo enviar el correo. Revisa la consola.");
+        const detalleError = err?.text || err?.message || "Error desconocido";
+        if (String(detalleError).toLowerCase().includes("origin")) {
+          toast("❌ Dominio no permitido en EmailJS. Agrega este dominio: " + window.location.origin);
+        } else {
+          toast("❌ No se pudo enviar el correo: " + detalleError);
+        }
       }
     }
 
