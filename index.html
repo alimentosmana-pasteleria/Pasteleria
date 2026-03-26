@@ -959,7 +959,7 @@
       moneda: "C$",
       emailjsServiceId: "service_o5hr0t7",
       emailjsTemplateId: "template_oqfm2bj",
-      emailjsPublicKey: "TL5B7Et2lUkc6X96a",
+      emailjsPublicKey: "V6ytzCGkG23X0F0qN",
     };
     const PRECIOS = {
       ambiente: { p: 300, m: 450, g: 600, xg: 800 },
@@ -1525,7 +1525,10 @@
       } catch (err) {
         console.error("EmailJS error:", err);
         const detalleError = err?.text || err?.message || "Error desconocido";
-        if (String(detalleError).toLowerCase().includes("origin")) {
+        const errTxt = String(detalleError).toLowerCase();
+        if (errTxt.includes("public key") || errTxt.includes("invalid public key")) {
+          toast("❌ Public Key invalida en EmailJS. Copia la Public Key correcta del Dashboard.");
+        } else if (errTxt.includes("origin")) {
           toast("❌ Dominio no permitido en EmailJS. Agrega este dominio: " + window.location.origin);
         } else {
           toast("❌ No se pudo enviar el correo: " + detalleError);
